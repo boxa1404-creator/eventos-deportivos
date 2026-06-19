@@ -1,0 +1,33 @@
+name: Actualizar eventos deportivos
+
+on:
+  schedule:
+    # Corre todos los días a las 12:00 UTC = 6:00 AM hora Centro (CST/CDT)
+    - cron: '0 12 * * *'
+  workflow_dispatch: {} # te permite darle "Run workflow" manualmente desde GitHub también
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Ejecutar script de actualización
+        run: node scripts/update-events.mjs
+
+      - name: Guardar cambios en el repositorio
+        run: |
+          git config user.name "Bot de Eventos"
+          git config user.email "bot@eventos.local"
+          git add public/api/events.json
+          git diff --staged --quiet || git commit -m "Actualización automática de eventos $(date -u +%Y-%m-%d)"
+          git push
