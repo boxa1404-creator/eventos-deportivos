@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Centro de Eventos — Panel diario</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0B0D10;
+    --bg-raised: #14171C;
+    --bg-card: #181B20;
+    --border: #262B33;
+    --text-primary: #EDEFF2;
+    --text-secondary: #8B919C;
+    --text-tertiary: #565C66;
+    --live: #FF4D4D;
+    --live-dim: rgba(255,77,77,0.12);
+    --sched: #4D9EFF;
+    --sched-dim: rgba(77,158,255,0.10);
+    --done: #565C66;
+    --done-dim: rgba(86,92,102,0.10);
+    --accent: #FFB23F;
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+    --font-body: 'Inter', sans-serif;
+  }
+
+  *{ box-sizing: border-box; margin:0; padding:0; }
+  html,body{ background: var(--bg); color: var(--text-primary); font-family: var(--font-body); min-height:100vh; }
+  body{ padding: 0 0 4rem; }
+
+  .topbar{
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, var(--bg-raised), var(--bg));
+    padding: 1.1rem 1.5rem;
+    position: sticky; top:0; z-index: 50;
+    backdrop-filter: blur(8px);
+  }
+  .topbar-inner{ max-width: 980px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+  .brand{ display:flex; align-items:center; gap:10px; }
+  .brand-mark{ width:30px; height:30px; border-radius:7px; background: var(--accent); display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0; }
+  .brand-text h1{ font-family: var(--font-display); font-size: 16px; font-weight:600; letter-spacing:-0.01em; }
+  .brand-text .sub{ font-size:11px; color: var(--text-tertiary); font-family: var(--font-mono); margin-top:1px; letter-spacing:0.02em; }
+  .status-pill{ display:flex; align-items:center; gap:7px; font-family: var(--font-mono); font-size:11px; color: var(--text-secondary); background: var(--bg-card); border:1px solid var(--border); padding:6px 12px; border-radius:999px; }
+  .pulse{ width:7px; height:7px; border-radius:50%; background: var(--live); box-shadow: 0 0 0 0 rgba(255,77,77,0.5); animation: pulse 2s infinite; }
+  @keyframes pulse{ 0%{box-shadow:0 0 0 0 rgba(255,77,77,0.45);} 70%{box-shadow:0 0 0 6px rgba(255,77,77,0);} 100%{box-shadow:0 0 0 0 rgba(255,77,77,0);} }
+
+  .wrap{ max-width: 980px; margin: 0 auto; padding: 1.75rem 1.5rem 0; }
+
+  .date-row{ display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom: 1.5rem; }
+  .date-row h2{ font-family: var(--font-display); font-size: 22px; font-weight:600; text-transform:capitalize; }
+  .date-row .updated{ font-family: var(--font-mono); font-size:11px; color: var(--text-tertiary); }
+
+  .stat-strip{ display:grid; grid-template-columns: repeat(4,1fr); gap:1px; background: var(--border); border:1px solid var(--border); border-radius:10px; overflow:hidden; margin-bottom: 1.75rem; }
+  .stat{ background: var(--bg-card); padding: 14px 16px; }
+  .stat .n{ font-family: var(--font-mono); font-size: 24px; font-weight:600; line-height:1; }
+  .stat .l{ font-size: 11px; color: var(--text-secondary); margin-top:5px; text-transform:uppercase; letter-spacing:0.05em; }
+  .stat.live .n{ color: var(--live); }
+  .stat.sched .n{ color: var(--sched); }
+
+  .controls{ display:flex; gap:8px; margin-bottom: 1.25rem; flex-wrap:wrap; align-items:center; }
+  .search{ flex:1; min-width:180px; position:relative; }
+  .search input{ width:100%; background: var(--bg-card); border:1px solid var(--border); border-radius:8px; padding:9px 12px 9px 34px; font-size:13px; color: var(--text-primary); font-family: var(--font-body); }
+  .search input::placeholder{ color: var(--text-tertiary); }
+  .search input:focus{ outline:none; border-color:#3A4150; }
+  .search-icon{ position:absolute; left:11px; top:50%; transform:translateY(-50%); width:14px; height:14px; opacity:0.4; }
+  .chip-row{ display:flex; gap:6px; flex-wrap:wrap; }
+  .chip{ font-family: var(--font-mono); font-size:11px; padding:7px 11px; border-radius:7px; border:1px solid var(--border); background: var(--bg-card); color: var(--text-secondary); cursor:pointer; white-space:nowrap; transition: all .12s; user-select:none; }
+  .chip:hover{ border-color:#3A4150; color: var(--text-primary); }
+  .chip.active{ background: var(--text-primary); color: var(--bg); border-color: var(--text-primary); }
+
+  .section{ margin-bottom: 1.75rem; }
+  .section-head{ display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .section-head .dot{ width:7px; height:7px; border-radius:50%; }
+  .section-head .label{ font-family: var(--font-mono); font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color: var(--text-secondary); }
+  .section-head .count{ font-family: var(--font-mono); font-size:11px; color: var(--text-tertiary); }
+
+  .event{ display:grid; grid-template-columns: 36px 1fr auto auto 28px; align-items:center; gap:14px; padding:12px 14px; background: var(--bg-card); border:1px solid var(--border); border-radius:9px; margin-bottom:7px; cursor:pointer; transition: border-color .12s, transform .08s; }
+  .event:hover{ border-color:#3A4150; }
+  .event:active{ transform: scale(0.997); }
+  .event.is-live{ border-left:3px solid var(--live); background: linear-gradient(90deg, var(--live-dim), var(--bg-card) 12%); }
+  .event.copied{ border-color:#3FCF8E !important; }
+  .sport-icon{ width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:16px; background: var(--bg-raised); }
+  .ev-info{ min-width:0; }
+  .ev-teams{ font-size:13.5px; font-weight:500; color: var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ev-meta{ font-size:11px; color: var(--text-tertiary); margin-top:3px; font-family: var(--font-mono); display:flex; gap:8px; flex-wrap:wrap; }
+  .badge{ font-family: var(--font-mono); font-size:9.5px; padding:2px 6px; border-radius:4px; font-weight:600; letter-spacing:0.03em; white-space:nowrap; }
+  .badge-live{ background: var(--live-dim); color: var(--live); }
+  .badge-sched{ background: var(--sched-dim); color: var(--sched); }
+  .badge-done{ background: var(--done-dim); color: var(--text-tertiary); }
+  .ev-score{ font-family: var(--font-mono); font-size:13px; font-weight:600; color: var(--text-primary); background: var(--bg-raised); padding:3px 9px; border-radius:6px; white-space:nowrap; }
+  .ev-time{ font-family: var(--font-mono); font-size:12px; color: var(--text-secondary); text-align:right; min-width:58px; }
+  .copy-ico{ opacity:0.3; transition: opacity .12s; width:15px; height:15px; }
+  .event:hover .copy-ico{ opacity:0.8; }
+
+  .empty{ text-align:center; padding: 3rem 1rem; color: var(--text-tertiary); font-size:13px; font-family: var(--font-mono); }
+
+  .toast{ position:fixed; bottom:20px; left:50%; transform: translateX(-50%) translateY(10px); background:#0F2A1F; border:1px solid #1F5C40; color:#6FE3A8; font-family: var(--font-mono); font-size:12px; padding:9px 18px; border-radius:8px; opacity:0; pointer-events:none; transition: all .2s; z-index:100; }
+  .toast.show{ opacity:1; transform: translateX(-50%) translateY(0); }
+
+  .footer-note{ max-width:980px; margin: 2rem auto 0; padding: 0 1.5rem; font-family: var(--font-mono); font-size:10.5px; color: var(--text-tertiary); text-align:center; line-height:1.6; }
+
+  @media (max-width: 560px){
+    .stat-strip{ grid-template-columns: repeat(2,1fr); }
+    .event{ grid-template-columns: 32px 1fr auto; }
+    .ev-score{ display:none; }
+    .ev-time{ display:none; }
+  }
+
+  ::selection{ background: var(--accent); color:#000; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-mark">📡</div>
+      <div class="brand-text">
+        <h1>Centro de Eventos</h1>
+        <div class="sub" id="lastSync">sincronizando…</div>
+      </div>
+    </div>
+    <div class="status-pill"><span class="pulse"></span> <span id="liveCount">0</span> en vivo ahora</div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="date-row">
+    <h2 id="todayLabel">—</h2>
+    <span class="updated" id="updatedLabel"></span>
+  </div>
+
+  <div class="stat-strip" id="statStrip"></div>
+
+  <div class="controls">
+    <div class="search">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="#8B919C" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input type="text" id="searchInput" placeholder="Buscar equipo, liga o deporte…" oninput="render()">
+    </div>
+  </div>
+  <div class="chip-row" id="chipRow"></div>
+
+  <div id="eventsRoot" style="margin-top: 1.5rem;"></div>
+
+</div>
+
+<div class="footer-note">
+  Datos cargados desde <span id="sourceNote">/api/events.json</span> · actualización automática diaria 6:00 AM CT<br>
+  Haz clic en cualquier evento para copiar su información
+</div>
+
+<div class="toast" id="toast">Copiado al portapapeles</div>
+
+<script>
+const SPORT_META = {
+  futbol:   { label: 'Fútbol',    icon: '⚽' },
+  basquetbol:{ label: 'Básquetbol', icon: '🏀' },
+  beisbol:  { label: 'Béisbol',   icon: '⚾' },
+  americano:{ label: 'Fútbol Am.', icon: '🏈' },
+  tenis:    { label: 'Tenis',     icon: '🎾' },
+  boxeo:    { label: 'Boxeo',     icon: '🥊' },
+  hockey:   { label: 'Hockey',    icon: '🏒' },
+  golf:     { label: 'Golf',      icon: '⛳' },
+  mma:      { label: 'MMA',       icon: '🥋' },
+};
+
+let EVENTS = [];
+let activeFilter = 'all';
+
+function getSport(k){ return SPORT_META[k] || { label: k, icon: '🏅' }; }
+
+function badge(status){
+  if(status==='live') return '<span class="badge badge-live">EN VIVO</span>';
+  if(status==='scheduled') return '<span class="badge badge-sched">PROGRAMADO</span>';
+  return '<span class="badge badge-done">FINALIZADO</span>';
+}
+
+async function loadEvents(){
+  try{
+    const res = await fetch('/api/events.json', { cache: 'no-store' });
+    if(!res.ok) throw new Error('no data file yet');
+    const data = await res.json();
+    EVENTS = data.events || [];
+    document.getElementById('todayLabel').textContent = data.date_label || '—';
+    document.getElementById('updatedLabel').textContent = data.updated_at ? ('actualizado ' + data.updated_at) : '';
+    document.getElementById('lastSync').textContent = data.updated_at ? ('última sync: ' + data.updated_at) : 'sin datos aún';
+  }catch(e){
+    document.getElementById('eventsRoot').innerHTML = '<div class="empty">⚠ Aún no hay datos cargados.<br>El primer ciclo automático los generará, o ejecuta el script de actualización manual.</div>';
+    document.getElementById('lastSync').textContent = 'sin datos aún';
+    return;
+  }
+  buildChips();
+  render();
+}
+
+function buildChips(){
+  const sports = [...new Set(EVENTS.map(e=>e.sport))];
+  let html = `<span class="chip ${activeFilter==='all'?'active':''}" onclick="setFilter('all')">Todos</span>`;
+  sports.forEach(s=>{
+    const m = getSport(s);
+    html += `<span class="chip ${activeFilter===s?'active':''}" onclick="setFilter('${s}')">${m.icon} ${m.label}</span>`;
+  });
+  document.getElementById('chipRow').innerHTML = html;
+}
+
+function setFilter(f){ activeFilter = f; buildChips(); render(); }
+
+function render(){
+  const q = (document.getElementById('searchInput').value || '').toLowerCase();
+  const filtered = EVENTS.filter(e=>{
+    const ms = activeFilter==='all' || e.sport===activeFilter;
+    const mq = !q || (e.teams+e.liga+e.sport).toLowerCase().includes(q);
+    return ms && mq;
+  });
+
+  const live = filtered.filter(e=>e.status==='live');
+  const sched = filtered.filter(e=>e.status==='scheduled');
+  const done = filtered.filter(e=>e.status==='done');
+
+  document.getElementById('liveCount').textContent = live.length;
+
+  document.getElementById('statStrip').innerHTML = `
+    <div class="stat"><div class="n">${filtered.length}</div><div class="l">Total hoy</div></div>
+    <div class="stat live"><div class="n">${live.length}</div><div class="l">En vivo</div></div>
+    <div class="stat sched"><div class="n">${sched.length}</div><div class="l">Programados</div></div>
+    <div class="stat"><div class="n">${done.length}</div><div class="l">Finalizados</div></div>
+  `;
+
+  const root = document.getElementById('eventsRoot');
+  if(!filtered.length){ root.innerHTML = '<div class="empty">No hay eventos que coincidan con tu búsqueda</div>'; return; }
+
+  const sections = [
+    { label: 'En vivo ahora', dot: 'var(--live)', items: live },
+    { label: 'Programados hoy', dot: 'var(--sched)', items: sched },
+    { label: 'Finalizados', dot: 'var(--done)', items: done },
+  ];
+
+  let html = '';
+  sections.forEach(sec=>{
+    if(!sec.items.length) return;
+    html += `<div class="section"><div class="section-head"><span class="dot" style="background:${sec.dot}"></span><span class="label">${sec.label}</span><span class="count">${sec.items.length}</span></div>`;
+    sec.items.forEach(e=>{
+      const sp = getSport(e.sport);
+      html += `<div class="event ${e.status==='live'?'is-live':''}" id="ev-${e.id}" onclick="copyEvent('${e.id}')">
+        <div class="sport-icon">${sp.icon}</div>
+        <div class="ev-info">
+          <div class="ev-teams">${e.teams}</div>
+          <div class="ev-meta">${badge(e.status)}<span>${e.liga}</span>${e.channel? '<span>· '+e.channel+'</span>':''}</div>
+        </div>
+        <div class="ev-score">${e.score || ''}</div>
+        <div class="ev-time">${e.time || ''}</div>
+        <svg class="copy-ico" viewBox="0 0 24 24" fill="none" stroke="#8B919C" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+      </div>`;
+    });
+    html += '</div>';
+  });
+  root.innerHTML = html;
+}
+
+function copyEvent(id){
+  const e = EVENTS.find(x=>x.id===id);
+  if(!e) return;
+  const sp = getSport(e.sport);
+  const statusMap = { live:'EN VIVO', scheduled:'PROGRAMADO', done:'FINALIZADO' };
+  const text = `${sp.icon} ${e.teams}\n📅 ${document.getElementById('todayLabel').textContent} · ${e.time||''}\n🏆 ${e.liga}${e.score? '\n📊 '+e.score:''}${e.channel? '\n📺 '+e.channel:''}\n🔹 ${statusMap[e.status]}`;
+  navigator.clipboard.writeText(text).catch(()=>{});
+  const card = document.getElementById('ev-'+id);
+  if(card){ card.classList.add('copied'); setTimeout(()=>card.classList.remove('copied'), 1300); }
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 1700);
+}
+
+loadEvents();
+// refresca la vista (no recarga la página) cada 5 min, por si el cron actualizó el JSON
+setInterval(loadEvents, 5*60*1000);
+</script>
+
+</body>
+</html>
